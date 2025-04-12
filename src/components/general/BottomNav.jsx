@@ -1,51 +1,58 @@
-import {
-	House,
-	Notebook,
-	Plus,
-	CookingPot,
-	CircleUserRound,
-} from "lucide-react";
-import { NavLink, useLocation } from "react-router-dom";
-
-/*<meta name="viewport" content="viewport-fit=cover">is required for responsivness of the dock in iOS.*/
+import { Link, useLocation } from "react-router-dom";
+import { Refrigerator, BookOpenCheck, Soup, User, Plus } from "lucide-react";
 
 const BottomNav = () => {
-	const location = useLocation();
-	const path = location.pathname;
+  const { pathname } = useLocation();
 
-	return (
-		<div className="dock dock-sm">
-			<button className={path === "/" ? "dock-active" : ""}>
-				<NavLink to="/">
-					<House />
-				</NavLink>
-			</button>
+  return (
+    <div className="fixed bottom-0 left-0 right-0 z-50">
+      <div className="dock dock-xs bg-gray-300 relative">
+        {/* Floating Action Button inside the dock */}
+        <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 z-10">
+          <Link to="/search">
+            <button className="btn btn-lg btn-circle bg-green-400 text-white hover:bg-green-500 shadow-lg">
+              <Plus className="w-8 h-8" />
+            </button>
+          </Link>
+        </div>
 
-			<button className={path === "/diary" ? "dock-active" : ""}>
-				<NavLink to="/diary">
-					<Notebook />
-				</NavLink>
-			</button>
-
-			<button className={path === "/search" ? "dock-active" : ""}>
-				<NavLink to="/search">
-					<Plus />
-				</NavLink>
-			</button>
-
-			<button className={path === "/recipes" ? "dock-active" : ""}>
-				<NavLink to="/recipes">
-					<CookingPot />
-				</NavLink>
-			</button>
-
-			<button className={path === "/account" ? "dock-active" : ""}>
-				<NavLink to="/account">
-					<CircleUserRound />
-				</NavLink>
-			</button>
-		</div>
-	);
+        {/* Dock Items */}
+        <Link
+          to="/"
+          className={`btn-ghost btn-sm rounded-btn ${
+            pathname === "/" ? "dock-active" : ""
+          }`}
+        >
+          <Refrigerator className="w-5 h-5" />
+        </Link>
+        <Link
+          to="/diary"
+          className={`btn-ghost rounded-btn ${
+            pathname === "/diary" ? "dock-active" : ""
+          }`}
+        >
+          <BookOpenCheck className="w-5 h-5" />
+        </Link>
+        <div className="w-12" />
+        <Link
+          to="/recipes"
+          className={`btn-ghost rounded-btn ${
+            pathname === "/recipes" ? "dock-active" : ""
+          }`}
+        >
+          <Soup className="w-5 h-5" />
+        </Link>
+        <Link
+          to="/account"
+          className={`btn-ghost rounded-btn ${
+            pathname === "/account" ? "dock-active" : ""
+          }`}
+        >
+          <User className="w-5 h-5" />
+        </Link>
+      </div>
+    </div>
+  );
 };
 
 export default BottomNav;
