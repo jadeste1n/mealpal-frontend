@@ -14,7 +14,7 @@ const BottomNav = () => {
 	const path = location.pathname;
 
 	return (
-		<div className="dock dock-sm">
+		<div className="dock dock-sm z-40">
 			<button className={path === "/" ? "dock-active" : ""}>
 				<NavLink to="/">
 					<House />
