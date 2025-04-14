@@ -1,3 +1,6 @@
 import { me, signin, signOut, signup } from './auth';
 
-export { me, signin, signOut, signup };
+import { getFridgeItems, addFridgeItem, deleteFridgeItem, toggleFavorite, getFavorites, getItemsByCategory  } from './fridgeItems';
+
+export { me, signin, signOut, signup, getFridgeItems, addFridgeItem, deleteFridgeItem, toggleFavorite, getFavorites, getItemsByCategory };
+
