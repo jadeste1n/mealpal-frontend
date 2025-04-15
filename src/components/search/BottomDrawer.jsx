@@ -8,7 +8,38 @@ const BottomDrawer = ({ selection }) => {
 	const [isOpen, setIsOpen] = useState(false);
 	const { addToSelection } = useContext(AppContext);
 
+	//Open/Close Drawer
 	const toggle = () => setIsOpen(!isOpen);
+
+	//Button Action: Add selected items to fridge
+	const handleAddToFridge = async () => {
+		// make a loop for every item since backend expects a single object, not an array.
+		for (const item of selection) {
+			try {
+				const res = await fetch("http://localhost:5050/fridge/items", {
+					method: "POST",
+					credentials: "include",
+					headers: {
+						"Content-Type": "application/json",
+					},
+					body: JSON.stringify({
+						name: item.name,
+						brand: item.brand || "",
+						quantity: 1, //default for now
+						category: item.category || "other", // default if none is given
+						nutrition: item.nutrition || {},
+						/*source: item.source || "recipe",*/
+					}),
+				});
+				if (!res.ok) throw new Error("Failed to add item to fridge");
+				console.log(`Saved: ${item.name}`); //DEBUG
+
+				//remove item from selection if successfully added to fridge
+			} catch (error) {
+				console.error(`Error saving ${item.name}:`, error.message);
+			}
+		}
+	};
 
 	return (
 		<div
@@ -31,7 +62,12 @@ const BottomDrawer = ({ selection }) => {
 						{addToSelection === "Add To Diary" ? (
 							<button className="btn btn-sm btn-primary">Add To Diary</button>
 						) : (
-							<button className="btn btn-sm btn-primary">Add To Fridge</button>
+							<button
+								className="btn btn-sm btn-primary"
+								onClick={handleAddToFridge}
+							>
+								Add To Fridge
+							</button>
 						)}
 
 						<p className="text-sm text-gray-500">

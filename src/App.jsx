@@ -17,6 +17,7 @@ export const AppContext = createContext();
 
 function App() {
 	//search variables-------
+	const backendUrl = import.meta.env.VITE_BACKEND_URL;
 	const [searchResults, setSearchResults] = useState([]);
 	const [isLoading, setIsLoading] = useState(false);
 	const [delayedQuery, setDelayedQuery] = useState("");
@@ -26,59 +27,77 @@ function App() {
 		const stored = localStorage.getItem("selection");
 		return stored ? JSON.parse(stored) : []; //parse elements from local Storage or return empty array if none saved
 	});
+	const [favorites, setFavorites] = useState([]);
 
+	//search utils-------
+	//fetch all the Favorite items from backend
+	const fetchFavorites = async () => {
+		try {
+			const res = await fetch(`${backendUrl}/favorites/items`, {
+				credentials: "include",
+			});
+			if (res.ok) {
+				const data = await res.json();
+				setFavorites(data);
+			}
+		} catch (err) {
+			console.error("Failed to fetch favorites", err);
+		}
+	};
+
+	// search effects ---------
+	//save selection to localStorage (on mount + whenever variable changes)
 	useEffect(() => {
 		localStorage.setItem("selection", JSON.stringify(selection));
 		console.log("Updated selection:", selection); //every time selection array changes, update to local Storage
 	}, [selection]);
 
-	// 2. print ingredient to list
-	// 3. adjust quantity in local Storage //remove from local Storage //print recipe to local Storage /type = recipe
-	// 4. add to fridge OR add to diary
+	useEffect(() => {
+		fetchFavorites();
+	}, []);
 
 	//---------------
 	return (
 		<AppContext.Provider
-		value={{
-			searchResults,
-			setSearchResults,
-			isLoading,
-			setIsLoading,
-			delayedQuery,
-			setDelayedQuery,
-			selectedTab,
-			setSelectedTab,
-			selection,
-			setSelection,
-			addToSelection,
-			setAddToSelection,
-		}}
-	>
-		<BrowserRouter>
-		  <Routes>
-			{/* Root layout */}
-			<Route element={<RootLayout />}>
-			  {/* Protected routes */}
-			  <Route element={<ProtectedLayout />}>
-				<Route element={<MainLayout />}>
-				  <Route index element={<InventoryOverview />} />
-				  <Route path="/diary" element={<Diary />} />
-				  <Route path="/search" element={<Search />} />
-				  <Route path="/recipes" element={<CreateRecipe />} />
-				  <Route path="/account" element={<AccountSettings />} />
-				</Route>
-			  </Route>
-	
-			  {/* Public routes */}
-			  <Route path="/signup" element={<Signup />} />
-			  <Route path="/login" element={<Login />} />
-			</Route>
-		  </Routes>
-		</BrowserRouter>
-		</AppContext.Provider>
+			value={{
+				searchResults,
+				setSearchResults,
+				isLoading,
+				setIsLoading,
+				delayedQuery,
+				setDelayedQuery,
+				selectedTab,
+				setSelectedTab,
+				selection,
+				setSelection,
+				addToSelection,
+				setAddToSelection,
+				favorites, 
+				fetchFavorites
+			}}
+		>
+			<BrowserRouter>
+				<Routes>
+					{/* Root layout */}
+					<Route element={<RootLayout />}>
+						{/* Protected routes */}
+						<Route element={<ProtectedLayout />}>
+							<Route element={<MainLayout />}>
+								<Route index element={<InventoryOverview />} />
+								<Route path="/diary" element={<Diary />} />
+								<Route path="/search" element={<Search />} />
+								<Route path="/recipes" element={<CreateRecipe />} />
+								<Route path="/account" element={<AccountSettings />} />
+							</Route>
+						</Route>
 
-	  );
- 
+						{/* Public routes */}
+						<Route path="/signup" element={<Signup />} />
+						<Route path="/login" element={<Login />} />
+					</Route>
+				</Routes>
+			</BrowserRouter>
+		</AppContext.Provider>
+	);
 }
 export default App;
-
