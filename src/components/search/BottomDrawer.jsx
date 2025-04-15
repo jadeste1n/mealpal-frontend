@@ -6,7 +6,7 @@ import { AppContext } from "../../App";
 
 const BottomDrawer = ({ selection }) => {
 	const [isOpen, setIsOpen] = useState(false);
-	const { addToSelection } = useContext(AppContext);
+	const { addToSelection, backendUrl } = useContext(AppContext);
 
 	//Open/Close Drawer
 	const toggle = () => setIsOpen(!isOpen);
@@ -15,28 +15,78 @@ const BottomDrawer = ({ selection }) => {
 	const handleAddToFridge = async () => {
 		// make a loop for every item since backend expects a single object, not an array.
 		for (const item of selection) {
+			// Check if the item has the necessary data
+			const itemName = item.name || (item.data ? item.data.name : "Unknown");
+			const itemBrand = item.brand || (item.data ? item.data.brand : "");
+			const itemNutrition =
+				item.nutrition || (item.data ? item.data.nutrition : {});
+			const itemCategory = item.category || "other"; // Default category if none provided
+
 			try {
-				const res = await fetch("http://localhost:5050/fridge/items", {
+				const res = await fetch(`${backendUrl}/fridge/items`, {
 					method: "POST",
 					credentials: "include",
 					headers: {
 						"Content-Type": "application/json",
 					},
 					body: JSON.stringify({
-						name: item.name,
-						brand: item.brand || "",
+						//convert object to fridge item
+						name: itemName, //empty array if no name is set
+						brand: itemBrand, //empty array if no brand is set
 						quantity: 1, //default for now
-						category: item.category || "other", // default if none is given
-						nutrition: item.nutrition || {},
-						/*source: item.source || "recipe",*/
+						category: itemCategory, // default if none is given
+						nutrition: itemNutrition,
 					}),
 				});
+				console.log(item); //DEBUG
 				if (!res.ok) throw new Error("Failed to add item to fridge");
-				console.log(`Saved: ${item.name}`); //DEBUG
+				console.log(`Saved: ${itemName}`); //DEBUG
 
-				//remove item from selection if successfully added to fridge
+				//remove item from selection if successfully added to fridge & empty localStorage off it
 			} catch (error) {
-				console.error(`Error saving ${item.name}:`, error.message);
+				console.error(`Error saving ${itemName}:`, error.message);
+			}
+		}
+	};
+
+	const handleAddToDiary = async () => {
+		// make a loop for every item since backend expects a single object, not an array.
+		for (const item of selection) {
+			// Check if the item has the necessary data
+			const itemName = item.name || (item.data ? item.data.name : "Unknown");
+			const itemBrand = item.brand || (item.data ? item.data.brand : "");
+			const itemNutrition =
+				item.nutrition || (item.data ? item.data.nutrition : {});
+			const itemCategory = item.category || "other"; // Default category if none provided
+			const itemSource = item.source || "recipe";
+
+			try {
+				const res = await fetch("http://localhost:5050/diary/", {
+					method: "POST",
+					credentials: "include",
+					headers: {
+						"Content-Type": "application/json",
+					},
+					body: JSON.stringify({
+						//convert object to fridge item
+						date: new Date(),
+						meal: "uncategorised", //default uncategorised
+						item: {
+							name: itemName,
+							brand: itemBrand,
+							quantity: 1, //default for now
+							category: itemCategory, // default if none is given
+							nutrition: itemNutrition,
+						},
+						source: itemSource,
+					}),
+				});
+				if (!res.ok) throw new Error("Failed to add item to diary");
+				console.log(`Saved: ${itemName}`); //DEBUG
+
+				//remove item from selection if successfully added to fridge & empty localStorage off it
+			} catch (error) {
+				console.error(`Error saving ${itemName}:`, error.message);
 			}
 		}
 	};
@@ -60,7 +110,12 @@ const BottomDrawer = ({ selection }) => {
 "
 					>
 						{addToSelection === "Add To Diary" ? (
-							<button className="btn btn-sm btn-primary">Add To Diary</button>
+							<button
+								className="btn btn-sm btn-primary"
+								onClick={handleAddToDiary}
+							>
+								Add To Diary
+							</button>
 						) : (
 							<button
 								className="btn btn-sm btn-primary"

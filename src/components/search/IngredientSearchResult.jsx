@@ -12,8 +12,8 @@ const IngredientSearchResult = ({ ingredient }) => {
 	const isFavoriteItem = ingredient.data ? true : false;
 	// Ingredient details - Render conditionally based on source
 	const ingredientId = ingredient._id || ingredient.id;
-	const ReferenceId = ingredient.id || ingredient.data.id;
-	const source = ingredient.source ||  ingredient.data?.source;
+	//const ReferenceId = ingredient.id || ingredient.data.id;
+	const source = ingredient.source || ingredient.data?.source;
 	const ingredientName = isFavoriteItem
 		? ingredient.data.name
 		: ingredient.name;
@@ -22,22 +22,39 @@ const IngredientSearchResult = ({ ingredient }) => {
 		: ingredient.brand;
 	//--------------------
 
+	//NOTE ON OBJECT FORMATS:
+	// data object from food db details with ID (NO NUTRIENTS): {"id": 2117388, "name": "APPLE","brand": "Associated Wholesale Grocers, Inc.", "nutrition": {"calories": 110, "protein": 0, "carbs": 28,"fat": 0}
+	// data object from food db with ID (NO SOURCE): {"id": 2117388, "name": "APPLE","brand": "Associated Wholesale Grocers, Inc.", "source": "usda"}
+	// objects saved to selection:
+	// for food db (with id): like food db details
+	// for favorites (with _id): like favorite object
+	//for fridge (with _id): { "nutrition": { "calories": 0, "protein": 13.5, "carbs": 58.7, "fat": 7 }, "_id": "67fe900ff46a8519dbff8598", "userId": "67fbf2fe846c53686b5c6ffa", "name": "Haferflocken", "quantity": 1, "category": "other", "isFavorite": false, "createdAt": "2025-04-15T16:57:_
+	//data object from favorites (WITH ID? & _ID): { "id": "0072250037129", "name": "100% Whole Wheat Bread", "brand": "Nature's Own", "source": "off", "_id": "67fe6f20ce4ac05f7217d54a", "userId": "67fbf2fe846c53686b5c6ffa", "type": "product", "createdAt": "2025-0415", "nutrition": { "calories": 110, "protein": 4, "carbs": 20, "fat": 1.5 },
+	// data from food db -> fetch -> saved to selection = only id from food db
+	// data from favorites -> fetched from backend -> saved to selection -> with _id
+
 	//--------------------UTILS
-	// Check if ingredient is in the selection array
+	// Check if ingredient is in the selection array (selection array saves objects with _id)
 	const isInSelection = selection.some(
-		(item) => (item._id || item.id) === ReferenceId
+		(item) => (item._id || item.id) === ingredientId
 	);
 
 	//check if item is in favorites db
 	const isFavorite = favorites.some(
-		(favorite) => (favorite.data._id || favorite.data.id) === ingredientId //food db = id & mealPal db = _id
+		(favorite) => (favorite._id || favorite.id) === ingredientId //food db = id & mealPal db = _id
 	);
 
+	const isFridgeItem = (ingredient) => {
+		return ingredient._id && !ingredient.data;
+	};
+
 	//--------------------EFFECTS
+	//fetch full product before adding to selection, fridge or favorites
 	const fetchFullIngredientDetails = async () => {
 		try {
+			//this fetch only takes .id of original search product
 			const res = await fetch(
-				`${backendUrl}/products/${source}/${ReferenceId}`
+				`${backendUrl}/products/${source}/${ingredientId}`
 			);
 
 			if (!res.ok) {
@@ -106,7 +123,7 @@ const IngredientSearchResult = ({ ingredient }) => {
 				body: JSON.stringify({
 					type: "product",
 					data: {
-						id: fullProduct.id,
+						//id: fullProduct.id,
 						name: fullProduct.name,
 						brand: fullProduct.brand || "",
 						category: fullProduct.category || "other",
@@ -148,9 +165,21 @@ const IngredientSearchResult = ({ ingredient }) => {
 	const handleAddToSelection = async () => {
 		if (isInSelection) return; //check if its already saved to selection, if Already there, no need to fetch or add again
 
-		//get full product details
-		const fullProduct = await fetchFullIngredientDetails();
-		if (!fullProduct) return;
+		let fullProduct;
+
+		//get full product details if its from search
+		if (!isFavoriteItem && !isFridgeItem(ingredient)) {
+			//if it doesnt have data object
+			fullProduct = await fetchFullIngredientDetails();
+			if (!fullProduct) return;
+		}
+
+		//if in format of favorite or fridge item save object without modification to selection
+		if (isFavoriteItem || isFridgeItem(ingredient)) {
+			fullProduct = {
+				...ingredient,
+			};
+		}
 
 		//add product to list of elements to add to diary or fridge
 		setSelection((prevSelection) => [...prevSelection, fullProduct]);
