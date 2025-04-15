@@ -37,7 +37,7 @@ const TabsSelection = ({ AddToSelection, ingredients }) => {
 								</li>
 								{ingredients.map((ingredient) => (
 									<IngredientSearchResult
-										key={ingredient.id}
+										key={ingredient._id || ingredient.id}
 										ingredient={ingredient}
 									/>
 								))}
@@ -53,7 +53,6 @@ const TabsSelection = ({ AddToSelection, ingredients }) => {
 					onClick={() => setSelectedTab("favorites")}
 				/>
 				<div className="tab-content border-base-300 bg-base-100 p-10">
-					List of Favorite Ingredients{" "}
 					{isLoading && <div className="text-xs text-muted">Searching...</div>}
 					{!isLoading &&
 					ingredients.length === 0 &&
@@ -71,7 +70,7 @@ const TabsSelection = ({ AddToSelection, ingredients }) => {
 								</li>
 								{ingredients.map((ingredient) => (
 									<IngredientSearchResult
-										key={ingredient.id}
+										key={ingredient._id || ingredient.id}
 										ingredient={ingredient}
 									/>
 								))}
@@ -105,7 +104,7 @@ const TabsSelection = ({ AddToSelection, ingredients }) => {
 								</li>
 								{ingredients.map((ingredient) => (
 									<IngredientSearchResult
-										key={ingredient.id}
+										key={ingredient._id || ingredient.id}
 										ingredient={ingredient}
 									/>
 								))}
