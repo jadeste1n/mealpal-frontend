@@ -7,13 +7,13 @@ const IngredientSearchResult = ({ ingredient }) => {
 	// takes ingredient from fetched data array
 	const { selection, setSelection, favorites, fetchFavorites } =
 		useContext(AppContext);
-	// Normalize the ingredient object by checking for either id or _id
-	const ingredientId = ingredient._id || ingredient.id; //ingredient can either come from mongoDb or FoodData Db bwith _id or id
-	const source = ingredient.source;
 	const backendUrl = import.meta.env.VITE_BACKEND_URL;
 	// Check if the ingredient is coming from favorites
 	const isFavoriteItem = ingredient.data ? true : false;
 	// Ingredient details - Render conditionally based on source
+	const ingredientId = ingredient._id || ingredient.id;
+	const ReferenceId = ingredient.id || ingredient.data.id;
+	const source = ingredient.source ||  ingredient.data?.source;
 	const ingredientName = isFavoriteItem
 		? ingredient.data.name
 		: ingredient.name;
@@ -25,7 +25,7 @@ const IngredientSearchResult = ({ ingredient }) => {
 	//--------------------UTILS
 	// Check if ingredient is in the selection array
 	const isInSelection = selection.some(
-		(item) => (item._id || item.id) === ingredientId
+		(item) => (item._id || item.id) === ReferenceId
 	);
 
 	//check if item is in favorites db
@@ -37,8 +37,7 @@ const IngredientSearchResult = ({ ingredient }) => {
 	const fetchFullIngredientDetails = async () => {
 		try {
 			const res = await fetch(
-				`${backendUrl}/products/${source}/${ingredientId}`,
-				{ credentials: "include" }
+				`${backendUrl}/products/${source}/${ReferenceId}`
 			);
 
 			if (!res.ok) {
@@ -107,7 +106,7 @@ const IngredientSearchResult = ({ ingredient }) => {
 				body: JSON.stringify({
 					type: "product",
 					data: {
-						/*id: fullProduct._id || fullProduct.id, */ // nod needed in my opion
+						id: fullProduct.id,
 						name: fullProduct.name,
 						brand: fullProduct.brand || "",
 						category: fullProduct.category || "other",
