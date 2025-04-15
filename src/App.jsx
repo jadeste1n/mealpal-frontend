@@ -73,7 +73,8 @@ function App() {
 				addToSelection,
 				setAddToSelection,
 				favorites, 
-				fetchFavorites
+				fetchFavorites, 
+				backendUrl,
 			}}
 		>
 			<BrowserRouter>

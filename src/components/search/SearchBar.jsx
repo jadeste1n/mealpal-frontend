@@ -62,7 +62,7 @@ const SearchBar = ({ changeSearchQuery }) => {
 			console.log("Response from fetch:", data); // DEBUG
 			let filtered = data;
 
-			if (query.length !== 0) {
+			if (query.length !== 0) {//filter results if query is set
 				filtered = data.filter((item) =>
 					item.name?.toLowerCase().includes(query.toLowerCase())
 				);
@@ -82,7 +82,8 @@ const SearchBar = ({ changeSearchQuery }) => {
 			await fetchFavorites();
 			let filtered = favorites;
 			console.log(filtered);
-			if (query.length !== 0) {
+			
+			if (query.length !== 0) {//filter results if query is set
 				filtered = favorites.filter((item) =>
 					item.data.name?.toLowerCase().includes(query.toLowerCase())
 				);
@@ -104,7 +105,7 @@ const SearchBar = ({ changeSearchQuery }) => {
 		}, 500);
 
 		return () => clearTimeout(delay);
-	}, [searchInput]); //whenever searchInput changes wait 500ms before setting delayedQuery
+	}, [searchInput]); //whenever searchInput changes wait 500ms before setting delayedQuery 
 
 	useEffect(() => {
 		// fetch data when delayedQuery changes
