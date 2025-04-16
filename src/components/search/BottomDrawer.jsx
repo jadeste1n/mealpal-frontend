@@ -6,13 +6,15 @@ import { AppContext } from "../../App";
 
 const BottomDrawer = ({ selection }) => {
 	const [isOpen, setIsOpen] = useState(false);
-	const { addToSelection, backendUrl } = useContext(AppContext);
+	const { setSelection, addToSelection, backendUrl } = useContext(AppContext);
 
 	//Open/Close Drawer
 	const toggle = () => setIsOpen(!isOpen);
 
 	//Button Action: Add selected items to fridge
 	const handleAddToFridge = async () => {
+		const addedToBackend = [];
+
 		// make a loop for every item since backend expects a single object, not an array.
 		for (const item of selection) {
 			// Check if the item has the necessary data
@@ -21,6 +23,8 @@ const BottomDrawer = ({ selection }) => {
 			const itemNutrition =
 				item.nutrition || (item.data ? item.data.nutrition : {});
 			const itemCategory = item.category || "other"; // Default category if none provided
+			const referenceId = item.id || item.data?.referenceId || item.referenceId; //from food db: item.id , from favorites: item.data.id , fridge: item.referenceId
+			console.log(item.id, item.data?.referenceId, item.referenceId); //from food db: item.id , from favorites: item.data.id , fridge: item.referenceId
 
 			try {
 				const res = await fetch(`${backendUrl}/fridge/items`, {
@@ -33,20 +37,43 @@ const BottomDrawer = ({ selection }) => {
 						//convert object to fridge item
 						name: itemName, //empty array if no name is set
 						brand: itemBrand, //empty array if no brand is set
+						referenceId: referenceId,
 						quantity: 1, //default for now
 						category: itemCategory, // default if none is given
 						nutrition: itemNutrition,
 					}),
 				});
-				console.log(item); //DEBUG
+				console.log(
+					"name:",
+					itemName,
+					"brand:",
+					itemBrand,
+					"referenceId:",
+					referenceId,
+					"quantity:",
+					1,
+					"category:",
+					itemCategory,
+					"nutrition:",
+					itemNutrition
+				);
 				if (!res.ok) throw new Error("Failed to add item to fridge");
-				console.log(`Saved: ${itemName}`); //DEBUG
+				console.log(`Saved: ${itemName} to fridge`); //DEBUG
 
-				//remove item from selection if successfully added to fridge & empty localStorage off it
+				addedToBackend.push(item); // track items that are successfully added to backend
 			} catch (error) {
 				console.error(`Error saving ${itemName}:`, error.message);
 			}
 		}
+
+		// Remove successfully added items to backend from selection
+		const updatedSelection = selection.filter(
+			(item) => !addedToBackend.includes(item)
+		);
+		setSelection(updatedSelection);
+
+		//Update localStorage
+		localStorage.setItem("selection", JSON.stringify(updatedSelection));
 	};
 
 	const handleAddToDiary = async () => {
@@ -82,7 +109,7 @@ const BottomDrawer = ({ selection }) => {
 					}),
 				});
 				if (!res.ok) throw new Error("Failed to add item to diary");
-				console.log(`Saved: ${itemName}`); //DEBUG
+				console.log(`Saved: ${itemName} to diary`); //DEBUG
 
 				//remove item from selection if successfully added to fridge & empty localStorage off it
 			} catch (error) {

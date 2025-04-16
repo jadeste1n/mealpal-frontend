@@ -1,17 +1,22 @@
 import { Star, CirclePlus, CircleMinus, Eye } from "lucide-react";
 import { useState, useEffect, useContext, use } from "react";
+import IngredientDetail from "./IngredientDetail";
 import { AppContext } from "../../App";
 
 const IngredientSearchResult = ({ ingredient }) => {
 	//--------------------VARIABLES
 	// takes ingredient from fetched data array
-	const { selection, setSelection, favorites, fetchFavorites } =
+	const { selection, setSelection, favorites, fetchFavorites, openModal } =
 		useContext(AppContext);
 	const backendUrl = import.meta.env.VITE_BACKEND_URL;
-	// Check if the ingredient is coming from favorites
+
+	// Check if item is coming from favorites
 	const isFavoriteItem = ingredient.data ? true : false;
+
+	const isFridgeItem = ingredient.referenceId ? true : false; //check if item is coming from fridge
+
 	// Ingredient details - Render conditionally based on source
-	const ingredientId = ingredient._id || ingredient.id;
+	const ingredientId = ingredient._id || ingredient.id; //check if _id or id is set
 	//const ReferenceId = ingredient.id || ingredient.data.id;
 	const source = ingredient.source || ingredient.data?.source;
 	const ingredientName = isFavoriteItem
@@ -20,33 +25,77 @@ const IngredientSearchResult = ({ ingredient }) => {
 	const ingredientBrand = isFavoriteItem
 		? ingredient.data.brand
 		: ingredient.brand;
+
+	/*
+	setModalContent(<IngredientDetail ingredient={ingredient} />);
+	setModalOpen(true);
+	*/
 	//--------------------
 
 	//NOTE ON OBJECT FORMATS:
-	// data object from food db details with ID (NO NUTRIENTS): {"id": 2117388, "name": "APPLE","brand": "Associated Wholesale Grocers, Inc.", "nutrition": {"calories": 110, "protein": 0, "carbs": 28,"fat": 0}
-	// data object from food db with ID (NO SOURCE): {"id": 2117388, "name": "APPLE","brand": "Associated Wholesale Grocers, Inc.", "source": "usda"}
+	//FOOD DB data in search tab
+	// data object from food db details with ID (NO SOURCE): {"id": 2117388, "name": "APPLE","brand": "Associated Wholesale Grocers, Inc.", "nutrition": {"calories": 110, "protein": 0, "carbs": 28,"fat": 0}
+	// data object from food db with ID (NO NUTRIENTS): {"id": 2117388, "name": "APPLE","brand": "Associated Wholesale Grocers, Inc.", "source": "usda"}
+
 	// objects saved to selection:
-	// for food db (with id): like food db details
-	// for favorites (with _id): like favorite object
-	//for fridge (with _id): { "nutrition": { "calories": 0, "protein": 13.5, "carbs": 58.7, "fat": 7 }, "_id": "67fe900ff46a8519dbff8598", "userId": "67fbf2fe846c53686b5c6ffa", "name": "Haferflocken", "quantity": 1, "category": "other", "isFavorite": false, "createdAt": "2025-04-15T16:57:_
-	//data object from favorites (WITH ID? & _ID): { "id": "0072250037129", "name": "100% Whole Wheat Bread", "brand": "Nature's Own", "source": "off", "_id": "67fe6f20ce4ac05f7217d54a", "userId": "67fbf2fe846c53686b5c6ffa", "type": "product", "createdAt": "2025-0415", "nutrition": { "calories": 110, "protein": 4, "carbs": 20, "fat": 1.5 },
-	// data from food db -> fetch -> saved to selection = only id from food db
-	// data from favorites -> fetched from backend -> saved to selection -> with _id
+	// data from food db -> fetch details -> saved to selection = only id from food db
+	// data from favorites/fridge -> fetched from backend -> saved to selection -> with _id
+
+	//data object from favorites (WITH _id): { "name": "100% Whole Wheat Bread", "brand": "Nature's Own", "source": "off", "_id": "67fe6f20ce4ac05f7217d54a", "userId": "67fbf2fe846c53686b5c6ffa", "type": "product", "createdAt": "2025-0415", "nutrition": { "calories": 110, "protein": 4, "carbs": 20, "fat": 1.5 },
+	//data object from fridge (with _id): { "nutrition": { "calories": 0, "protein": 13.5, "carbs": 58.7, "fat": 7 }, "_id": "67fe900ff46a8519dbff8598", "userId": "67fbf2fe846c53686b5c6ffa", "name": "Haferflocken", "quantity": 1, "category": "other", "isFavorite": false, "createdAt": "2025-04-15T16:57:_
 
 	//--------------------UTILS
 	// Check if ingredient is in the selection array (selection array saves objects with _id)
 	const isInSelection = selection.some(
-		(item) => (item._id || item.id) === ingredientId
+		(item) => (item._id || item.id || item.data.id) === ingredientId
 	);
+
+	/*
+	const isInSelection = selection.some((item) => {//check selection array
+		const possibleItemIds = [
+			item?.id,
+			item?.data?.id,
+			item?._id
+		];
+
+		const possibleIngredientIds = [
+			ingredientId,
+			ingredient.data?.id,
+		]
+	
+		const selected = possibleItemIds.some((id) => possibleIngredientIds.includes(id));; //check if mentioned id formats in selection match any of ids in ingredient object
+		return selected
+	});*/
+
+	/*const isInSelection = selection.some((item) => {
+		// Ingredient from Search: has `id`
+		if (ingredient?.id ) {
+			return (
+				item?.id === ingredient.id ||
+				item?.data?.id === ingredient.id
+			);
+		}
+	
+		// Ingredient from Favorites: has `data.id`
+		if (ingredient?.data?.id) {
+			return (
+				item?.id === ingredient.data.id ||
+				item?.data?.id === ingredient.data.id
+			);
+		}
+	
+		// Ingredient from Fridge: has `_id`
+		if (ingredient?._id) {
+			return item?._id === ingredient._id;
+		}
+	
+		return false; // fallback
+	});*/
 
 	//check if item is in favorites db
 	const isFavorite = favorites.some(
 		(favorite) => (favorite._id || favorite.id) === ingredientId //food db = id & mealPal db = _id
 	);
-
-	const isFridgeItem = (ingredient) => {
-		return ingredient._id && !ingredient.data;
-	};
 
 	//--------------------EFFECTS
 	//fetch full product before adding to selection, fridge or favorites
@@ -68,49 +117,40 @@ const IngredientSearchResult = ({ ingredient }) => {
 		}
 	};
 
-	// Check if the ingredient is in favorites on initial load + if isFavorite changes
-	/*
-	useEffect(() => {
-		const checkFavoriteStatus = async () => {
-			try {
-				const res = await fetch(`${backendUrl}/favorites/items`, {
-					method: "GET",
-					credentials: "include",
-				});
-
-				if (!res.ok) {
-					// If response is not ok, throw an error
-					throw new Error(
-						`Failed to fetch favorite status, Status: ${res.status}`
-					);
-				}
-
-				const favoriteData = await res.json(); //get updated array of favorites
-
-				// Check if the ingredient is in the favorites list
-				const isFavoriteInList = favoriteData.some(
-					(favorite) => favorite.data.id === ingredientId
-				);
-
-				// If the response contains the ingredient in favorites, mark it as favorite
-				setIsFavorite(isFavoriteInList);
-			} catch (error) {
-				console.error(
-					"Error checking if ingredient is in favorites:",
-					error.message
-				);
-			}
-		};
-
-		checkFavoriteStatus();
-	}, [ingredientId, backendUrl]);*/
-
 	//--------------------BUTTON ACTIONS
+	const handleOpenDetails = async () => {
+		console.log("Opening modal...", ingredient); //DEBUG
+
+		// Check for nutrition in both ingredient and ingredient.data
+		const ingredientData = ingredient?.data || ingredient;
+		const hasNutrition = ingredientData.nutrition;
+
+		if (hasNutrition) {
+			// Already have the details
+			openModal(<IngredientDetail ingredient={ingredient} />);
+		} else {
+			// Fetch the full details
+			const fullDetails = await fetchFullIngredientDetails();
+			if (fullDetails) {
+				openModal(<IngredientDetail ingredient={fullDetails} />);
+			} else {
+				openModal(<p>Failed to load ingredient details.</p>);
+			}
+		}
+	};
+
 	// Add ingredient to favorites
 	const handleAddToFavorites = async () => {
-		//fetch full product details
-		const fullProduct = await fetchFullIngredientDetails();
-		if (!fullProduct) return;
+		let fullProduct;
+		//if coming from search fetch full product details
+		if (!isFridgeItem && !isFavoriteItem) {
+			fullProduct = await fetchFullIngredientDetails();
+			if (!fullProduct) return;
+		} else {
+			fullProduct = {
+				...ingredient,
+			};
+		}
 
 		//add to favorites db
 		try {
@@ -123,7 +163,7 @@ const IngredientSearchResult = ({ ingredient }) => {
 				body: JSON.stringify({
 					type: "product",
 					data: {
-						//id: fullProduct.id,
+						referenceId: fullProduct.id, // id from food db
 						name: fullProduct.name,
 						brand: fullProduct.brand || "",
 						category: fullProduct.category || "other",
@@ -168,14 +208,13 @@ const IngredientSearchResult = ({ ingredient }) => {
 		let fullProduct;
 
 		//get full product details if its from search
-		if (!isFavoriteItem && !isFridgeItem(ingredient)) {
-			//if it doesnt have data object
+		if (!isFavoriteItem && !isFridgeItem) {
 			fullProduct = await fetchFullIngredientDetails();
 			if (!fullProduct) return;
 		}
 
 		//if in format of favorite or fridge item save object without modification to selection
-		if (isFavoriteItem || isFridgeItem(ingredient)) {
+		if (isFavoriteItem || isFridgeItem) {
 			fullProduct = {
 				...ingredient,
 			};
@@ -204,6 +243,7 @@ const IngredientSearchResult = ({ ingredient }) => {
 					<button
 						className="btn btn-square btn-ghost min-w-fit p-6
 "
+						onClick={handleOpenDetails}
 					>
 						<Eye /> {/* opens pop up with Ingredient Details */}
 					</button>
