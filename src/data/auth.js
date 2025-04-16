@@ -4,6 +4,7 @@ const baseURL = `${API_URL}/user`;
 
 export const me = async () => {
   const res = await fetch(`${baseURL}/me`, { credentials: 'include' });
+  
   if (!res.ok) {
     const errorData = await res.json();
     if (!errorData.error) {
