@@ -16,6 +16,10 @@ import Signup from "./pages/auth/SignUp";
 export const AppContext = createContext();
 
 function App() {
+	//Modal variables-------
+	const [modalState, setModalState] = useState(false);
+	const [content, setContent] = useState(null);
+
 	//search variables-------
 	const backendUrl = import.meta.env.VITE_BACKEND_URL;
 	const [searchResults, setSearchResults] = useState([]);
@@ -28,6 +32,17 @@ function App() {
 		return stored ? JSON.parse(stored) : []; //parse elements from local Storage or return empty array if none saved
 	});
 	const [favorites, setFavorites] = useState([]);
+
+	// Modal utils-------
+	const openModal = (content) => {
+		setContent(content);
+		setModalState(true);
+	};
+
+	const closeModal = () => {
+		setContent(null);
+		setModalState(false);
+	};
 
 	//search utils-------
 	//fetch all the Favorite items from backend
@@ -72,9 +87,15 @@ function App() {
 				setSelection,
 				addToSelection,
 				setAddToSelection,
-				favorites, 
-				fetchFavorites, 
+				favorites,
+				fetchFavorites,
 				backendUrl,
+				setContent,
+				content,
+				openModal,
+				closeModal,
+				setModalState,
+				modalState,
 			}}
 		>
 			<BrowserRouter>
