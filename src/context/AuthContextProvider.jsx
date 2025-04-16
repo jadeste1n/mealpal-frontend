@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { toast } from "react-toastify";
 import { me, signOut } from "@/data";
 import { AuthContext } from ".";
@@ -7,6 +8,8 @@ const AuthContextProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [checkSession, setCheckSession] = useState(true);
   const [user, setUser] = useState(null);
+  const pathsToIgnore = ["/login", "/signup"];
+  const location = useLocation();
 
   useEffect(() => {
     const getUser = async () => {
@@ -20,8 +23,10 @@ const AuthContextProvider = ({ children }) => {
         setCheckSession(false);
       }
     };
-    checkSession && getUser();
-  }, [checkSession]);
+    const shouldCheck =
+      checkSession && !pathsToIgnore.includes(location.pathname);
+    if (shouldCheck) getUser();
+  }, [checkSession, location.pathname]);
 
   const logOut = async () => {
     try {
