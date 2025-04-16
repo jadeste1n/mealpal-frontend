@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import FridgeItem from "../../components/inventory/FridgeItem"; // Adjust the path as needed
-import { getFridgeItems } from "@/data";
+import { getFridgeItems, deleteFridgeItem } from "@/data";
 
 const InventoryOverview = () => {
   const [items, setItems] = useState([]);
+  const [toastMessage, setToastMessage] = useState(null);
 
   useEffect(() => {
     const fetchFridgeItems = async () => {
@@ -44,36 +45,44 @@ const InventoryOverview = () => {
 
   const handleDeleteItem = async (itemId) => {
     try {
-      await axios.delete(
-        `${import.meta.env.VITE_BACKEND_URL}/fridge/items/${itemId}`,
-        {
-          withCredentials: true,
-        }
-      );
-
-      // Optimistically update UI
+      await deleteFridgeItem(itemId); // from your fridgeService.js
       setItems((prev) => prev.filter((item) => item._id !== itemId));
+      setToastMessage("Item deleted successfully.");
+      setTimeout(() => setToastMessage(null), 3000);
     } catch (err) {
-      console.error("Error deleting item:", err);
+      console.error("Delete failed:", err);
+      setToastMessage("Error deleting item.");
+      setTimeout(() => setToastMessage(null), 3000);
     }
   };
 
   return (
-    <div className="p-4">
-      {items.map((item) => (
-        <FridgeItem
-          key={item._id}
-          name={item.name}
-          nutrition={item.nutrition}
-          isFavorite={item.isFavorite}
-          onToggleFavorite={() =>
-            handleToggleFavorite(item._id, item.isFavorite)
-          }
-          onOpenMenu={() => handleOpenMenu(item._id)}
-          onDelete={() => handleDeleteItem(item._id)}
-        />
-      ))}
-    </div>
+    <>
+      <div className="p-4">
+        {items.map((item) => (
+          <FridgeItem
+            key={item._id}
+            name={item.name}
+            nutrition={item.nutrition}
+            isFavorite={item.isFavorite}
+            onToggleFavorite={() =>
+              handleToggleFavorite(item._id, item.isFavorite)
+            }
+            onOpenMenu={() => handleOpenMenu(item._id)}
+            onDelete={() => handleDeleteItem(item._id)}
+          />
+        ))}
+      </div>
+
+      {/* ✅ Toast goes here, outside the item map */}
+      {toastMessage && (
+        <div className="toast toast-start z-[9999] fixed bottom-4 left-4">
+          <div className="alert alert-success">
+            <span>{toastMessage}</span>
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 
