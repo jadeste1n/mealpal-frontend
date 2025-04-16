@@ -1,5 +1,6 @@
 import { useState, useEffect, useContext } from "react";
 import { AppContext } from "../../App";
+import { AuthContext } from "@/context"; // adjust path if needed
 
 const SearchBar = ({ changeSearchQuery }) => {
 	const [searchInput, setSearchInput] = useState("");
@@ -9,8 +10,13 @@ const SearchBar = ({ changeSearchQuery }) => {
 		delayedQuery,
 		setDelayedQuery,
 		selectedTab,
+		fetchFavorites,
+		favorites,
 	} = useContext(AppContext);
-	const userId = "67f80406be0685998449b4a2"; // TESTING // Get UserId dynamically later
+
+	const { user, isAuthenticated } = useContext(AuthContext);
+	//const userId = "67f80406be0685998449b4a2"; // TESTING // Get UserId dynamically later
+	const userId = user?._id;
 
 	const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
@@ -18,13 +24,17 @@ const SearchBar = ({ changeSearchQuery }) => {
 		setIsLoading(true);
 		try {
 			const response = await fetch(
-				`${backendUrl}/products/search?query=${query}`
+				`${backendUrl}/products/search?query=${query}`,
+				{
+					credentials: "include",
+				}
 			);
 			if (!response.ok) {
 				throw new Error(`HTTP error! status: ${response.status}`);
 			}
 
 			const data = await response.json();
+			console.log("Response from fetch:", data); // DEBUG
 			setSearchResults(data);
 		} catch (err) {
 			console.error(err);
@@ -33,22 +43,59 @@ const SearchBar = ({ changeSearchQuery }) => {
 		}
 	};
 
-	/*
 	const fetchIngredientsfromFridge = async (query) => {
 		setIsLoading(true);
 		try {
-			const response = await fetch(
-				`${backendUrl}/fridge/${userId}/items`
-			);
+			const response = await fetch(`${backendUrl}/fridge/items`, {
+				method: "GET",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				credentials: "include", // optional: needed if backend expects cookies or sessions
+			});
+
+			if (!response.ok) {
+				throw new Error(`HTTP error! status: ${response.status}`);
+			}
+
 			const data = await response.json();
-			setSearchResults(data);
+			console.log("Response from fetch:", data); // DEBUG
+			let filtered = data;
+
+			if (query.length !== 0) {//filter results if query is set
+				filtered = data.filter((item) =>
+					item.name?.toLowerCase().includes(query.toLowerCase())
+				);
+			}
+
+			setSearchResults(filtered);
 		} catch (err) {
 			console.error(err);
 		} finally {
 			setIsLoading(false);
 		}
 	};
-    */
+
+	const fetchIngredientsfromFavorites = async (query) => {
+		setIsLoading(true);
+		try {
+			await fetchFavorites();
+			let filtered = favorites;
+			console.log(filtered);
+			
+			if (query.length !== 0) {//filter results if query is set
+				filtered = favorites.filter((item) =>
+					item.data.name?.toLowerCase().includes(query.toLowerCase())
+				);
+			}
+
+			setSearchResults(filtered);
+		} catch (err) {
+			console.error(err);
+		} finally {
+			setIsLoading(false);
+		}
+	};
 
 	// useEffect to delay the search query
 	useEffect(() => {
@@ -58,34 +105,37 @@ const SearchBar = ({ changeSearchQuery }) => {
 		}, 500);
 
 		return () => clearTimeout(delay);
-	}, [searchInput]); //whenever searchInput changes wait 500ms before setting delayedQuery
+	}, [searchInput]); //whenever searchInput changes wait 500ms before setting delayedQuery 
 
 	useEffect(() => {
 		// fetch data when delayedQuery changes
-		console.log("Triggering fetch for:", selectedTab, delayedQuery, delayedQuery.length); // DEBUG
+		console.log(
+			"Triggering fetch for:",
+			selectedTab,
+			delayedQuery,
+			delayedQuery.length
+		); // DEBUG
 
-		if (delayedQuery.length > 0) {
-			if (selectedTab === "new") {
-				fetchIngredientsFromDb(delayedQuery);
-				console.log(delayedQuery);
-			}
-			if (selectedTab === "favorites") {
-				fetchIngredientsFromDb(delayedQuery);
-			}
-			if (selectedTab === "fridge") {
-				fetchIngredientsFromDb(delayedQuery);
-			}
-			if (selectedTab === "recipes") {
-				fetchIngredientsFromDb(delayedQuery);
-			}
+		if (delayedQuery.length > 0 && selectedTab === "new") {
+			fetchIngredientsFromDb(delayedQuery);
+			console.log(delayedQuery);
 		}
 
-		/*
-		if (delayedQuery.length === 0) {
+		if (selectedTab === "favorites") {
+			fetchIngredientsfromFavorites(delayedQuery);
+		}
+		if (selectedTab === "fridge") {
+			fetchIngredientsfromFridge(delayedQuery);
+		}
+		if (selectedTab === "recipes") {
+			fetchIngredientsFromDb(delayedQuery);
+		}
+
+		if (delayedQuery.length === 0 && selectedTab === "new") {
 			if (selectedTab === "new") {
 				setSearchResults([]);
 			}
-		}*/
+		}
 	}, [delayedQuery, selectedTab]);
 
 	return (
